@@ -1,0 +1,101 @@
+name: "SRCNN"
+input: "data"
+input_dim: 1
+input_dim: 1
+input_dim: 33
+input_dim: 33
+
+layer {
+  name: "SR_conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "SR_conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output: 64
+    kernel_size: 9
+    stride: 1
+    pad: 0
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "SR_relu1"
+  type: "ReLU"
+  bottom: "SR_conv1"
+  top: "SR_conv1"
+}
+
+layer {
+  name: "SR_conv2"
+  type: "Convolution"
+  bottom: "SR_conv1"
+  top: "SR_conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output: 32
+    kernel_size: 5
+    stride: 1
+    pad: 0
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "SR_relu2"
+  type: "ReLU"
+  bottom: "SR_conv2"
+  top: "SR_conv2"
+}
+
+layer {
+  name: "SR_conv3"
+  type: "Convolution"
+  bottom: "SR_conv2"
+  top: "SR_conv3"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output: 1
+    kernel_size: 5
+    stride: 1
+    pad: 0
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
