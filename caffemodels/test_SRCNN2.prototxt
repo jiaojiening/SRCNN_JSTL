@@ -1,0 +1,137 @@
+name: "SRCNN_RGB"
+input: "data"
+input_dim: 1
+input_dim: 3
+input_dim: 160
+input_dim: 60
+
+################################### bgr2ycbcr ################################
+layer { name: "slicer1" type: "Slice" 
+  bottom: "data" 
+  top: "data_B" 
+  top: "data_G" 
+  top: "data_R"
+  slice_param { axis: 1 slice_point: 1 slice_point: 2} }
+
+layer { name: "eltwise_layer_Y" type: "Eltwise"
+  bottom: "data_R" bottom: "data_G" bottom: "data_B" top: "eltwise_layer_Y"
+  eltwise_param { operation: SUM coeff: 0.2568 coeff: 0.5041 coeff: 0.0979} }
+layer{ name: "conv_Y" type: "Convolution"
+  bottom: "eltwise_layer_Y" top: "conv_Y"
+  param { lr_mult: 0 } 
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: 1 }
+    bias_filler { type: "constant" value: 16.0 } } }
+layer { name: "eltwise_layer_Cb" type: "Eltwise"
+  bottom: "data_R" bottom: "data_G" bottom: "data_B" top: "eltwise_layer_Cb"
+  eltwise_param { operation: SUM coeff: -0.1482 coeff: -0.2910 coeff: 0.4392 } }
+layer { name: "eltwise_layer_Cr" type: "Eltwise"
+  bottom: "data_R" bottom: "data_G" bottom: "data_B" top: "eltwise_layer_Cr"
+  eltwise_param { operation: SUM coeff: 0.4392 coeff: -0.3678 coeff: -0.0714 } }
+
+################################## SR_Y ##################################;c
+layer { name: "SR_conv1" type: "Convolution"
+  bottom: "conv_Y" top: "SR_conv1"
+  param { lr_mult: 1.0e-6 }
+  param { lr_mult: 1.0e-7 }
+  convolution_param { num_output: 64 kernel_size: 9 stride: 1 pad: 4
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 } } }
+layer { name: "SR_relu1" type: "ReLU" bottom: "SR_conv1" top: "SR_conv1" }
+
+layer { name: "SR_conv2" type: "Convolution"
+  bottom: "SR_conv1" top: "SR_conv2"
+  param { lr_mult: 1.0e-6 }
+  param { lr_mult: 1.0e-7 }
+  convolution_param { num_output: 32 kernel_size: 5 stride: 1 pad: 2
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 } } }
+layer { name: "SR_relu2" type: "ReLU" bottom: "SR_conv2" top: "SR_conv2" }
+
+layer { name: "SR_conv3" type: "Convolution" 
+  bottom: "SR_conv2" top: "SR_conv3"
+  param { lr_mult: 1.0e-7 }
+  param { lr_mult: 1.0e-7 }
+  convolution_param { num_output: 1 kernel_size: 5 stride: 1 pad: 2
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 } } }
+
+################################# ycbcr2bgr ################################
+layer{ name: "conv_Y_2" type: "Convolution"
+  bottom: "SR_conv3" top: "conv_Y_2"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: 1 }
+    bias_filler { type: "constant" value: -16.0 } } }
+layer { name: "eltwise_layer_R" type: "Eltwise"
+  bottom: "conv_Y_2" bottom: "eltwise_layer_Cb" bottom: "eltwise_layer_Cr" top: "eltwise_layer_R"
+  eltwise_param { operation: SUM coeff: 1.1644 coeff: 0.0000 coeff: 1.5960 } }
+
+layer { name: "eltwise_layer_R_relu1" type: "ReLU" bottom: "eltwise_layer_R" top: "eltwise_layer_R" }
+layer { name: "eltwise_layer_R_conv1" type: "Convolution"
+  bottom: "eltwise_layer_R" top: "eltwise_layer_R_conv1"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: -1}
+    bias_filler { type: "constant" value: 255 } } }
+layer { name: "eltwise_layer_R_relu2" type: "ReLU" bottom: "eltwise_layer_R_conv1" top: "eltwise_layer_R_conv1" }
+layer { name: "eltwise_layer_R_conv2" type: "Convolution"
+  bottom: "eltwise_layer_R_conv1" top: "eltwise_layer_R_conv2"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: -1}
+    bias_filler { type: "constant" value: 255 } } }
+
+layer { name: "eltwise_layer_G" type: "Eltwise"
+  bottom: "conv_Y_2" bottom: "eltwise_layer_Cb" bottom: "eltwise_layer_Cr" top: "eltwise_layer_G"
+  eltwise_param { operation: SUM coeff: 1.1644 coeff: -0.3918 coeff: -0.8130 } }
+
+layer { name: "eltwise_layer_G_relu1" type: "ReLU" bottom: "eltwise_layer_G" top: "eltwise_layer_G" }
+layer { name: "eltwise_layer_G_conv1" type: "Convolution"
+  bottom: "eltwise_layer_G" top: "eltwise_layer_G_conv1"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: -1}
+    bias_filler { type: "constant" value: 255 } } }
+layer { name: "eltwise_layer_G_relu2" type: "ReLU" bottom: "eltwise_layer_G_conv1" top: "eltwise_layer_G_conv1" }
+layer { name: "eltwise_layer_G_conv2" type: "Convolution"
+  bottom: "eltwise_layer_G_conv1" top: "eltwise_layer_G_conv2"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: -1}
+    bias_filler { type: "constant" value: 255 } } }
+
+layer { name: "eltwise_layer_B" type: "Eltwise"
+  bottom: "conv_Y_2" bottom: "eltwise_layer_Cb" bottom: "eltwise_layer_Cr" top: "eltwise_layer_B"
+  eltwise_param { operation: SUM coeff: 1.1644 coeff: 2.0172 coeff: 0.0000 } }
+
+layer { name: "eltwise_layer_B_relu1" type: "ReLU" bottom: "eltwise_layer_B" top: "eltwise_layer_B" }
+layer { name: "eltwise_layer_B_conv1" type: "Convolution"
+  bottom: "eltwise_layer_B" top: "eltwise_layer_B_conv1"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: -1}
+    bias_filler { type: "constant" value: 255 } } }
+layer { name: "eltwise_layer_B_relu2" type: "ReLU" bottom: "eltwise_layer_B_conv1" top: "eltwise_layer_B_conv1" }
+layer { name: "eltwise_layer_B_conv2" type: "Convolution"
+  bottom: "eltwise_layer_B_conv1" top: "eltwise_layer_B_conv2"
+  param { lr_mult: 0 }
+  param { lr_mult: 0 }
+  convolution_param { num_output: 1 kernel_size: 1 stride: 1 pad: 0
+    weight_filler { type: "constant" value: -1}
+    bias_filler { type: "constant" value: 255 } } }
+
+layer {  name: "data_RGB"  
+  type: "Concat"
+  bottom: "eltwise_layer_B_conv2"
+  bottom: "eltwise_layer_G_conv2"
+  bottom: "eltwise_layer_R_conv2"
+  top: "data_RGB"
+}
