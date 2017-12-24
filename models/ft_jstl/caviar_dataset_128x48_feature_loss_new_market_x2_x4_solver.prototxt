@@ -1,0 +1,20 @@
+net: "/home/jiening/SRCNN_JSTL/models/ft_jstl/caviar_dataset_128x48_feature_loss_new_trainval.prototxt"
+test_iter: 20
+test_interval: 100
+test_initialization: true
+
+display: 20
+average_loss: 20
+iter_size: 2
+
+lr_policy: "poly"
+base_lr: 0.01
+power: 0.5
+max_iter: 1000
+
+momentum: 0.9
+weight_decay: 0.0005
+
+snapshot_prefix: "/home/jiening/SRCNN_JSTL/external/snapshots/market_x2_x4/caviar_dataset_128x48_feature_loss_new"
+snapshot: 500
+solver_mode: GPU
