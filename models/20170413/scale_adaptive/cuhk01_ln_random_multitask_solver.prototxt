@@ -1,0 +1,20 @@
+net: "/home/jiening/SRCNN_JSTL/models/scale_adaptive/cuhk01_ln_random_multitask_trainval.prototxt"
+test_iter: 80
+test_interval: 100
+test_initialization: true
+
+display: 20
+average_loss: 20
+iter_size: 2
+
+lr_policy: "poly"
+base_lr: 0.01
+power: 0.5
+max_iter: 20000
+
+momentum: 0.9
+weight_decay: 0.0005
+
+snapshot_prefix: "/home/jiening/SRCNN_JSTL/external/snapshots/scale_adaptive/cuhk01_ln_random_multitask"
+snapshot: 10000
+solver_mode: GPU
